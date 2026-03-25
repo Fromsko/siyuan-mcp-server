@@ -30,7 +30,8 @@ jobs:
           body: |
             Release version ${{ github.ref_name }}
             
-            Please refer to [CHANGELOG.md](./CHANGELOG.md) for details.
+            ## Changelog
+            See [CHANGELOG.md](./CHANGELOG.md) for details.
 
   build:
     needs: create-release
