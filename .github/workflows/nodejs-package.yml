@@ -18,14 +18,18 @@ on:
 jobs:
   build-test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x, 22.x]
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 23
       - uses: pnpm/action-setup@v3
         with:
           version: 10.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
       - run: pnpm install
       - run: pnpm build
       - run: pnpm test -- --passWithNoTests
@@ -37,22 +41,24 @@ jobs:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: write
+      id-token: write  # Needed for publishing to npm using OIDC
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 23
-          registry-url: https://registry.npmjs.org/
       - uses: pnpm/action-setup@v3
         with:
           version: 10.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          registry-url: https://registry.npmjs.org/
+          cache: 'pnpm'
       - run: pnpm install
       - run: pnpm build
       - run: pnpm test -- --passWithNoTests
         if: always()
       - run: pnpm publish --no-git-checks
         env:
-          NODE_AUTH_TOKEN: ${{secrets.npm_token}}
+          NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
 
   create-release:
     needs: build-test
@@ -81,7 +87,4 @@ jobs:
             Release version ${{ github.ref_name }}
             
             ## Changelog
-            - Fixed MCP initialization outputting non-JSON formatted debug information
-            - Added support for configuring remote SiYuan address via SIYUAN_API_URL environment variable
-            - Improved compatibility with strict MCP clients like Antigravity
-            - Enhanced documentation for remote server setup
+            See [CHANGELOG.md](./CHANGELOG.md) for details.
