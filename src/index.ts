@@ -35,9 +35,6 @@ export class SiyuanMcpServer {
         this.server = new McpServer({
             name: options?.name || "siyuan-mcp-server",
             version: options?.version || "1.2.3",
-            capabilities: {
-                tools: {},
-            },
         });
 
         this.transport = new StdioServerTransport();

@@ -65,9 +65,10 @@ docker pull fromsko/siyuan-mcp-server
 
 #### 环境变量设置
 
-| 环境变量       | 必需 | 说明                            |
-| -------------- | ---- | ------------------------------- |
-| `SIYUAN_TOKEN` | ✅   | 思源笔记 API 令牌，用于身份验证 |
+| 环境变量         | 必需 | 说明                                      |
+| ---------------- | ---- | ----------------------------------------- |
+| `SIYUAN_TOKEN`   | ✅   | 思源笔记 API 令牌，用于身份验证           |
+| `SIYUAN_API_URL` | ❌   | 思源笔记 API 地址，默认为 http://localhost:6806，可用于连接远程思源笔记服务 |
 
 #### 在 Claude Desktop 中配置
 
@@ -241,6 +242,33 @@ docker run --rm -it \
 > - API 服务是否已开启（默认端口 6806）
 > - Token 是否正确且未过期
 > - 防火墙是否阻止了连接
+> - 如需连接远程思源笔记，请设置 `SIYUAN_API_URL` 环境变量指向正确的地址（例如：`http://your-server-ip:6806`）
+
+**❓ 如何连接远程思源笔记服务**
+
+> 默认情况下，服务器会连接到 `http://localhost:6806`。要连接到远程思源笔记服务，请设置 `SIYUAN_API_URL` 环境变量：
+>
+> ```bash
+> # 连接到远程服务器
+> SIYUAN_TOKEN=your-token SIYUAN_API_URL=http://your-server-ip:6806 siyuan-mcp-server
+> ```
+>
+> 或在 Claude Desktop 配置中：
+>
+> ```json
+> {
+> 	"mcpServers": {
+> 		"siyuan": {
+> 			"command": "npx",
+> 			"args": ["-y", "@fromsko/siyuan-mcp-server"],
+> 			"env": {
+> 				"SIYUAN_TOKEN": "your-api-token",
+> 				"SIYUAN_API_URL": "http://your-server-ip:6806"
+> 			}
+> 		}
+> 	}
+> }
+> ```
 
 **❓ Claude Desktop 无法识别 MCP 服务器**
 

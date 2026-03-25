@@ -24,9 +24,6 @@ import { registerQueryTool } from './tools/queries.js';
 const server = new McpServer({
     name: "siyuan-mcp-server",
     version: "1.0.0",
-    capabilities: {
-        tools: {},
-    },
 });
 
 // 创建传输层实例
@@ -55,10 +52,7 @@ registerQueryTool(server);
 registerHelpTool(server);
 
 // 启动服务器
-console.log('🚀 启动思源笔记 MCP 服务器...');
-console.log('📝 服务器名称: siyuan-mcp-server');
-console.log('🔢 版本: 1.2.3');
-console.log('🔗 传输协议: stdio');
+// 注意：MCP 协议要求只输出 JSON-RPC 消息，所以不输出任何调试信息
 
 // 环境变量配置
 function getEnvironmentConfig() {
@@ -68,12 +62,15 @@ function getEnvironmentConfig() {
         process.env.SIYUAN_AUTH_TOKEN;
 
     if (!token) {
-        console.warn('⚠️  警告: 未检测到 SIYUAN_TOKEN 环境变量');
-        console.log('💡 请通过以下方式之一设置 Token:');
-        console.log('   1. 环境变量: export SIYUAN_TOKEN=your_token');
-        console.log('   2. MCP 配置: 在客户端配置中设置 env.SIYUAN_TOKEN');
-        console.log('   3. 系统环境: 添加到系统环境变量中');
-        console.log('🔄 服务器将继续启动，但可能无法正常访问思源笔记 API');
+        // 仅在开发模式下输出警告
+        if (process.env.NODE_ENV === 'development') {
+            console.warn('Warning: SIYUAN_TOKEN environment variable not detected');
+            console.log('Please set the token using one of the following:');
+            console.log('  1. Environment variable: export SIYUAN_TOKEN=your_token');
+            console.log('  2. MCP config: set env.SIYUAN_TOKEN in client config');
+            console.log('  3. System environment: add to system environment variables');
+            console.log('Server will continue to start but may not access SiYuan API properly');
+        }
         return null;
     }
 
@@ -83,21 +80,19 @@ function getEnvironmentConfig() {
 // 获取环境配置
 const siyuanToken = getEnvironmentConfig();
 
-if (siyuanToken) {
-    console.log('✅ 环境变量检查通过');
-    console.log('🔑 SIYUAN_TOKEN: ****' + siyuanToken.slice(-4));
-} else {
-    console.log('🟡 服务器将在有限模式下启动');
+if (siyuanToken && process.env.NODE_ENV === 'development') {
+    console.log('Environment variables check passed');
+    console.log('SIYUAN_TOKEN: ****' + siyuanToken.slice(-4));
+} else if (process.env.NODE_ENV === 'development') {
+    console.log('Server will start in limited mode');
 }
 
 // 启动服务器连接
 try {
     server.connect(transport);
-    console.log('🎉 MCP 服务器启动成功!');
-    console.log('📡 等待客户端连接...');
-    console.log('🛠️  服务器已就绪，可提供思源笔记相关工具');
+    // 不输出任何启动成功消息以符合 MCP 协议
 } catch (error) {
-    console.error('❌ 服务器启动失败:', error);
+    console.error('Server startup failed:', error);
     process.exit(1);
 }
 
