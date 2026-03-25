@@ -23,16 +23,13 @@ jobs:
         node-version: [18.x, 20.x, 22.x]
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v3
-        with:
-          version: 10.7.0
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'pnpm'
-      - run: pnpm install
-      - run: pnpm build
-      - run: pnpm test -- --passWithNoTests
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build
+      - run: npm test -- --passWithNoTests
         if: always()
 
   publish-npm:
@@ -44,19 +41,16 @@ jobs:
       id-token: write  # Needed for publishing to npm using OIDC
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v3
-        with:
-          version: 10.7.0
       - uses: actions/setup-node@v4
         with:
           node-version: '22.x'
           registry-url: https://registry.npmjs.org/
-          cache: 'pnpm'
-      - run: pnpm install
-      - run: pnpm build
-      - run: pnpm test -- --passWithNoTests
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build
+      - run: npm test -- --passWithNoTests
         if: always()
-      - run: pnpm publish --no-git-checks
+      - run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
 
