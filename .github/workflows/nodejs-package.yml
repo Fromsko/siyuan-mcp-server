@@ -16,7 +16,7 @@ on:
     branches: [ main ]
 
 jobs:
-  test:
+  build-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,11 +28,11 @@ jobs:
           version: 10.7.0
       - run: pnpm install
       - run: pnpm build
-      - run: pnpm test
+      - run: pnpm test -- --passWithNoTests
         if: always()
 
   publish-npm:
-    needs: test
+    needs: build-test
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     permissions:
@@ -48,12 +48,14 @@ jobs:
           version: 10.7.0
       - run: pnpm install
       - run: pnpm build
+      - run: pnpm test -- --passWithNoTests
+        if: always()
       - run: pnpm publish --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}
 
   create-release:
-    needs: test
+    needs: build-test
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     permissions:
