@@ -73,7 +73,8 @@ describe('stdio server', () => {
             id: 1,
             result: {
                 serverInfo: {
-                    name: 'siyuan-mcp-server'
+                    name: 'siyuan-mcp-server',
+                    version: packageJson.version
                 }
             }
         });

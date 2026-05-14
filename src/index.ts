@@ -19,6 +19,7 @@ import { registerSystemHandlers } from './tools/commands/system.js';
 import { registerTemplateHandlers } from './tools/commands/template.js';
 import { registerHelpTool } from './tools/help.js';
 import { registerQueryTool } from './tools/queries.js';
+import { getPackageVersion } from './utils/version.js';
 
 /**
  * 思源笔记 MCP 服务器类
@@ -34,7 +35,7 @@ export class SiyuanMcpServer {
     }) {
         this.server = new McpServer({
             name: options?.name || "siyuan-mcp-server",
-            version: options?.version || "1.2.3",
+            version: options?.version || getPackageVersion(),
         });
 
         this.transport = new StdioServerTransport();
@@ -133,10 +134,11 @@ export default SiyuanMcpServer;
 // 如果作为脚本运行，则启动服务器
 if (import.meta.url === `file://${process.argv[1]}`) {
     const server = new SiyuanMcpServer();
+    const packageVersion = getPackageVersion();
 
     console.log('🚀 启动思源笔记 MCP 服务器...');
     console.log('📝 服务器名称: siyuan-mcp-server');
-    console.log('🔢 版本: 1.2.5');
+    console.log(`🔢 版本: ${packageVersion}`);
     console.log('🔗 传输协议: stdio');
     console.log('🛠️  服务器已就绪，可提供思源笔记相关工具');
 

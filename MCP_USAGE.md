@@ -58,7 +58,7 @@ SIYUAN_TOKEN=aoqz8at28b6ihmxo node dist/server.js
 ```
 🚀 启动思源笔记 MCP 服务器...
 📝 服务器名称: siyuan-mcp-server
-🔢 版本: 1.2.3
+🔢 版本: 1.2.8
 🔗 传输协议: stdio
 ✅ 环境变量检查通过
 🔑 SIYUAN_TOKEN: ****hmxo
