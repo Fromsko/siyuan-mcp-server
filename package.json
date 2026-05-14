@@ -4,7 +4,7 @@
 		"name": "Fromsko"
 	},
 	"bin": {
-		"siyuan-mcp-server": "dist/index.js"
+		"siyuan-mcp-server": "dist/server.js"
 	},
 	"bugs": {
 		"url": "https://github.com/fromsko/siyuan-mcp-server/issues"
