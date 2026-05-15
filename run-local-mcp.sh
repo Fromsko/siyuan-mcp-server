@@ -1,6 +1,20 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# ── 自清理：杀掉超过 10 分钟的旧 server 进程，防止僵尸堆积 ──
+# Hermes 每次新会话都会 spawn 一对 MCP server 进程，旧的不回收。
+# 用进程启动时间判断：超过 600 秒的杀掉。
+now=$(date +%s)
+for pid in $(pgrep -f 'siyuan-mcp-server/dist/server.js' 2>/dev/null || true); do
+    start=$(ps -o lstart= -p "$pid" 2>/dev/null)
+    if [ -n "$start" ]; then
+        start_ts=$(date -j -f "%a %b %d %T %Y" "$start" +%s 2>/dev/null) || continue
+        if [ $((now - start_ts)) -gt 600 ]; then
+            kill "$pid" 2>/dev/null || true
+        fi
+    fi
+done
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PORT_JSON="${SIYUAN_PORT_JSON:-$HOME/.config/siyuan/port.json}"
 SERVER_PATH="$SCRIPT_DIR/dist/server.js"
