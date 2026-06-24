@@ -30,11 +30,13 @@ class SiYuanClient {
         const baseURL = this.getBaseURL();
         const token = this.getToken();
 
-        if (!token) {
-            console.warn('⚠️  警告：未设置 SIYUAN_TOKEN 环境变量，API 调用可能会失败');
-            console.log('💡 请设置以下环境变量之一：SIYUAN_TOKEN、SIYUAN_API_TOKEN、SIYUAN_AUTH_TOKEN');
-        } else {
-            console.log('🔗 已连接到思源笔记 API:', baseURL);
+        if (process.env.NODE_ENV === 'development') {
+            if (!token) {
+                console.error('警告：未设置 SIYUAN_TOKEN 环境变量，API 调用可能会失败');
+                console.error('请设置以下环境变量之一：SIYUAN_TOKEN、SIYUAN_API_TOKEN、SIYUAN_AUTH_TOKEN');
+            } else {
+                console.error('已连接到思源笔记 API:', baseURL);
+            }
         }
 
         this.axiosInstance = axios.create({

@@ -70,6 +70,42 @@ docker pull fromsko/siyuan-mcp-server
 | `SIYUAN_TOKEN`   | ✅   | 思源笔记 API 令牌，用于身份验证           |
 | `SIYUAN_API_URL` | ❌   | 思源笔记 API 地址，默认为 http://localhost:6806，可用于连接远程思源笔记服务 |
 
+#### 本地仓库动态端口配置
+
+SiYuan 桌面端的内核端口可能会在重启后变化。使用本地仓库运行时，可以让 `run-local-mcp.sh` 自动读取 `~/.config/siyuan/port.json` 并设置 `SIYUAN_API_URL`：
+
+如果 MCP 客户端支持直接执行脚本：
+
+```json
+{
+	"mcpServers": {
+		"siyuan": {
+			"command": "/path/to/siyuan-mcp-server/run-local-mcp.sh",
+			"args": [],
+			"env": {
+				"SIYUAN_TOKEN": "your-api-token"
+			}
+		}
+	}
+}
+```
+
+如果 MCP 客户端使用 command 数组格式，可以通过 `/bin/bash` 执行脚本：
+
+```json
+{
+	"command": [
+		"/bin/bash",
+		"/path/to/siyuan-mcp-server/run-local-mcp.sh"
+	],
+	"environment": {
+		"SIYUAN_TOKEN": "your-api-token"
+	}
+}
+```
+
+运行前请先启动 SiYuan，并确保本地仓库已经执行过 `npm run build`。
+
 #### 在 Claude Desktop 中配置
 
 在 Claude Desktop 配置文件中添加以下内容：
