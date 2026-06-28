@@ -7,6 +7,9 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 )
 
+// httpServer serves MCP over HTTP (Streamable HTTP transport).
+// Suitable for remote deployment, Vercel, Cloudflare Workers, etc.
+// The MCP endpoint is served at {addr}/mcp.
 type httpServer struct{ addr string }
 
 func (h *httpServer) Serve(registry *tools.Registry, name, version string) error {

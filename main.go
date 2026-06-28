@@ -1,3 +1,26 @@
+// Package main is the entry point for siyuan-mcp-server-go.
+//
+// Architecture: layered design with pluggable transports.
+//
+//	main.go                      CLI entry, wires everything
+//	pkg/siyuan/client.go         SiYuan HTTP API client
+//	pkg/tools/registry.go        Tool registry with auto-help
+//	pkg/tools/handlers.go        37 declarative tool definitions
+//	pkg/transport/transport.go   Server interface
+//	pkg/transport/stdio.go       Stdio (mcp-go)
+//	pkg/transport/http.go        HTTP (mcp-go)
+//
+// Usage:
+//
+//	siyuan-mcp-server-go -mode stdio              # Claude Desktop/Cursor
+//	siyuan-mcp-server-go -mode http -addr :8080   # remote deployment
+//
+// Version is injected at build time via ldflags:
+//
+//	go build -ldflags="-s -w -X main.version=v1.0.0" .
+//
+// GoReleaser injects the git tag automatically. Falls back to
+// debug.ReadBuildInfo for go install scenarios.
 package main
 
 import (
@@ -11,13 +34,13 @@ import (
 	"github.com/Fromsko/siyuan-mcp-server-go/pkg/transport"
 )
 
-// version is set via ldflags at build time:
-//   go build -ldflags="-X main.version=v1.0.0" .
-// GoReleaser injects the git tag automatically.
+// version is injected via ldflags at build time.
+// GoReleaser sets this from the git tag.
 var version = "dev"
 
 func init() {
-	// Fallback: detect from Go module build info (go install scenario)
+	// Fallback: detect version from Go module build info.
+	// This handles "go install github.com/Fromsko/siyuan-mcp-server-go@latest".
 	if version == "dev" {
 		if info, ok := debug.ReadBuildInfo(); ok {
 			if info.Main.Version != "" && info.Main.Version != "(devel)" {

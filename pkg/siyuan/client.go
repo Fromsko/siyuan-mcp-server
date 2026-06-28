@@ -1,3 +1,19 @@
+// Package siyuan provides a minimal HTTP client for the SiYuan note-taking API.
+//
+// SiYuan exposes a REST API at http://localhost:6806 by default (configurable
+// via SIYUAN_API_URL). Authentication uses token-based auth via the
+// SIYUAN_TOKEN environment variable.
+//
+// Official API docs: https://github.com/siyuan-note/siyuan/blob/master/API_zh_CN.md
+//
+// Usage:
+//
+//	c := siyuan.NewClient()
+//	data, err := c.Call("/api/system/version", map[string]any{})
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	fmt.Println(string(data))
 package siyuan
 
 import (
@@ -10,21 +26,28 @@ import (
 	"time"
 )
 
-// Response is the standard SiYuan API response.
+// Response is the standard SiYuan API response envelope.
+// Every SiYuan endpoint returns { code, msg, data }.
 type Response struct {
-	Code int             `json:"code"`
-	Msg  string          `json:"msg"`
-	Data json.RawMessage `json:"data"`
+	Code int             `json:"code"` // 0 = success, non-zero = error
+	Msg  string          `json:"msg"`  // error message when code != 0
+	Data json.RawMessage `json:"data"` // payload, varies by endpoint
 }
 
-// Client is a minimal HTTP client for SiYuan API.
+// Client is an HTTP client for the SiYuan API.
+// It reads configuration from environment variables:
+//
+//	SIYUAN_TOKEN        — API token (required, from 设置 → 关于)
+//	SIYUAN_API_TOKEN    — fallback token name
+//	SIYUAN_AUTH_TOKEN   — fallback token name
+//	SIYUAN_API_URL      — base URL (default: http://localhost:6806)
 type Client struct {
 	baseURL    string
 	token      string
 	httpClient *http.Client
 }
 
-// NewClient creates a SiYuan API client.
+// NewClient creates a SiYuan API client from environment variables.
 func NewClient() *Client {
 	token := os.Getenv("SIYUAN_TOKEN")
 	if token == "" {
@@ -50,7 +73,11 @@ func (c *Client) HasToken() bool { return c.token != "" }
 // BaseURL returns the configured base URL.
 func (c *Client) BaseURL() string { return c.baseURL }
 
-// Call invokes a SiYuan API endpoint and returns the data field.
+// Call invokes a SiYuan API endpoint and returns the data portion of the response.
+//
+// The body parameter is JSON-marshaled and sent as the request body.
+// Returns the data field on success, or an error if the API returns code != 0
+// or if the HTTP request fails.
 func (c *Client) Call(endpoint string, body any) (json.RawMessage, error) {
 	jsonBody, err := json.Marshal(body)
 	if err != nil {

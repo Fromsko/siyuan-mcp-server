@@ -2,15 +2,35 @@ package tools
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
-// RegisterAll registers all 37 SiYuan MCP tools.
+// RegisterAll registers all 37 SiYuan API tools.
+//
+// Tool naming convention: {category}_{action}
+//
+//	notebook_*     — Notebook management (8 tools)
+//	filetree_*     — Document tree operations (6 tools)
+//	block_*        — Block-level CRUD (5 tools)
+//	attr_*         — Block attributes (2 tools)
+//	query_*        — SQL queries (1 tool)
+//	search_*       — Full-text search via SQL LIKE (1 tool)
+//	template_*     — Template rendering (2 tools)
+//	file_*         — File I/O (2 tools)
+//	export_*       — Export operations (2 tools)
+//	convert_*      — Format conversion (1 tool)
+//	notification_* — Push notifications (2 tools)
+//	network_*      — Network proxy (1 tool)
+//	system_*       — System info (3 tools)
+//	asset_*        — Asset upload (1 tool)
+//
+// Official SiYuan API reference:
+//
+//	https://github.com/siyuan-note/siyuan/blob/master/API_zh_CN.md
 func (r *Registry) RegisterAll() {
-	// ── helpers ──
+	// Helper: call a SiYuan endpoint and return the data as string.
 	call := func(endpoint string, body any) (string, error) {
 		data, err := r.client.Call(endpoint, body)
 		if err != nil {
@@ -18,10 +38,8 @@ func (r *Registry) RegisterAll() {
 		}
 		return string(data), nil
 	}
-	text := func(s string) *mcp.CallToolResult { return mcp.NewToolResultText(s) }
-	// errR := func(s string) *mcp.CallToolResult { return mcp.NewToolResultError(s) }
-	_ = text
 
+	// Helper shortcuts for common mcp.ToolOption patterns.
 	s := func(name string, opts ...mcp.PropertyOption) []mcp.ToolOption {
 		return []mcp.ToolOption{mcp.WithString(name, opts...)}
 	}
@@ -29,7 +47,10 @@ func (r *Registry) RegisterAll() {
 		return mcp.WithNumber(name, opts...)
 	}
 
-	// ── Notebook ──
+	// ────────────────────────────────────────────────────────────
+	// Notebook (8 tools) — /api/notebook/*
+	// ────────────────────────────────────────────────────────────
+
 	r.Register("notebook_lsNotebooks", "列出所有笔记本", nil,
 		func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 			v, err := call("/api/notebook/lsNotebooks", map[string]any{})
@@ -38,6 +59,7 @@ func (r *Registry) RegisterAll() {
 			}
 			return mcp.NewToolResultText(v), nil
 		})
+
 	r.Register("notebook_openNotebook", "打开笔记本",
 		s("notebook", mcp.Description("笔记本 ID"), mcp.Required()),
 		func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -47,6 +69,7 @@ func (r *Registry) RegisterAll() {
 			}
 			return mcp.NewToolResultText(v), nil
 		})
+
 	r.Register("notebook_closeNotebook", "关闭笔记本",
 		s("notebook", mcp.Description("笔记本 ID"), mcp.Required()),
 		func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -56,15 +79,19 @@ func (r *Registry) RegisterAll() {
 			}
 			return mcp.NewToolResultText(v), nil
 		})
+
 	r.Register("notebook_renameNotebook", "重命名笔记本",
-		append(s("notebook", mcp.Description("笔记本 ID"), mcp.Required()), s("name", mcp.Description("新名称"), mcp.Required())...),
+		append(s("notebook", mcp.Description("笔记本 ID"), mcp.Required()),
+			s("name", mcp.Description("新名称"), mcp.Required())...),
 		func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			v, err := call("/api/notebook/renameNotebook", map[string]any{"notebook": req.GetString("notebook", ""), "name": req.GetString("name", "")})
+			v, err := call("/api/notebook/renameNotebook",
+				map[string]any{"notebook": req.GetString("notebook", ""), "name": req.GetString("name", "")})
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
 			return mcp.NewToolResultText(v), nil
 		})
+
 	r.Register("notebook_createNotebook", "创建笔记本",
 		s("name", mcp.Description("笔记本名称"), mcp.Required()),
 		func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -74,6 +101,7 @@ func (r *Registry) RegisterAll() {
 			}
 			return mcp.NewToolResultText(v), nil
 		})
+
 	r.Register("notebook_removeNotebook", "删除笔记本",
 		s("notebook", mcp.Description("笔记本 ID"), mcp.Required()),
 		func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -83,6 +111,7 @@ func (r *Registry) RegisterAll() {
 			}
 			return mcp.NewToolResultText(v), nil
 		})
+
 	r.Register("notebook_getNotebookConf", "获取笔记本配置",
 		s("notebook", mcp.Description("笔记本 ID"), mcp.Required()),
 		func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -92,6 +121,7 @@ func (r *Registry) RegisterAll() {
 			}
 			return mcp.NewToolResultText(v), nil
 		})
+
 	r.Register("notebook_setNotebookConf", "设置笔记本配置",
 		[]mcp.ToolOption{
 			mcp.WithString("notebook", mcp.Description("笔记本 ID"), mcp.Required()),
@@ -105,7 +135,10 @@ func (r *Registry) RegisterAll() {
 			return mcp.NewToolResultText(v), nil
 		})
 
-	// ── Filetree ──
+	// ────────────────────────────────────────────────────────────
+	// Filetree (6 tools) — /api/filetree/*
+	// ────────────────────────────────────────────────────────────
+
 	r.Register("filetree_createDocWithMd", "通过 Markdown 创建文档",
 		[]mcp.ToolOption{
 			mcp.WithString("notebook", mcp.Description("笔记本 ID"), mcp.Required()),
@@ -119,6 +152,7 @@ func (r *Registry) RegisterAll() {
 			}
 			return mcp.NewToolResultText(v), nil
 		})
+
 	r.Register("filetree_renameDoc", "重命名文档",
 		[]mcp.ToolOption{
 			mcp.WithString("notebook", mcp.Description("笔记本 ID"), mcp.Required()),
@@ -132,6 +166,7 @@ func (r *Registry) RegisterAll() {
 			}
 			return mcp.NewToolResultText(v), nil
 		})
+
 	r.Register("filetree_removeDoc", "删除文档",
 		[]mcp.ToolOption{
 			mcp.WithString("notebook", mcp.Description("笔记本 ID"), mcp.Required()),
@@ -144,6 +179,7 @@ func (r *Registry) RegisterAll() {
 			}
 			return mcp.NewToolResultText(v), nil
 		})
+
 	r.Register("filetree_moveDocs", "移动文档",
 		[]mcp.ToolOption{
 			mcp.WithArray("fromPaths", mcp.Description("源路径列表"), mcp.Required()),
@@ -157,6 +193,7 @@ func (r *Registry) RegisterAll() {
 			}
 			return mcp.NewToolResultText(v), nil
 		})
+
 	r.Register("filetree_getHPathByPath", "根据路径获取人类可读路径",
 		[]mcp.ToolOption{
 			mcp.WithString("notebook", mcp.Description("笔记本 ID"), mcp.Required()),
@@ -169,6 +206,7 @@ func (r *Registry) RegisterAll() {
 			}
 			return mcp.NewToolResultText(v), nil
 		})
+
 	r.Register("filetree_getHPathByID", "根据 ID 获取人类可读路径",
 		s("id", mcp.Description("块 ID"), mcp.Required()),
 		func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -179,7 +217,10 @@ func (r *Registry) RegisterAll() {
 			return mcp.NewToolResultText(v), nil
 		})
 
-	// ── Block ──
+	// ────────────────────────────────────────────────────────────
+	// Block (5 tools) — /api/block/*
+	// ────────────────────────────────────────────────────────────
+
 	r.Register("block_insertBlock", "插入块（dataType: markdown 或 dom）",
 		[]mcp.ToolOption{
 			mcp.WithString("dataType", mcp.Description("markdown 或 dom"), mcp.Required()),
@@ -194,6 +235,7 @@ func (r *Registry) RegisterAll() {
 			}
 			return mcp.NewToolResultText(v), nil
 		})
+
 	r.Register("block_updateBlock", "更新块",
 		[]mcp.ToolOption{
 			mcp.WithString("dataType", mcp.Description("markdown 或 dom"), mcp.Required()),
@@ -207,6 +249,7 @@ func (r *Registry) RegisterAll() {
 			}
 			return mcp.NewToolResultText(v), nil
 		})
+
 	r.Register("block_deleteBlock", "删除块",
 		s("id", mcp.Description("块 ID"), mcp.Required()),
 		func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -216,6 +259,7 @@ func (r *Registry) RegisterAll() {
 			}
 			return mcp.NewToolResultText(v), nil
 		})
+
 	r.Register("block_moveBlock", "移动块",
 		[]mcp.ToolOption{
 			mcp.WithString("id", mcp.Description("块 ID"), mcp.Required()),
@@ -229,6 +273,7 @@ func (r *Registry) RegisterAll() {
 			}
 			return mcp.NewToolResultText(v), nil
 		})
+
 	r.Register("block_getBlockKramdown", "获取块 Kramdown 源码",
 		s("id", mcp.Description("块 ID"), mcp.Required()),
 		func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -239,7 +284,10 @@ func (r *Registry) RegisterAll() {
 			return mcp.NewToolResultText(v), nil
 		})
 
-	// ── Attr ──
+	// ────────────────────────────────────────────────────────────
+	// Attr (2 tools) — /api/attr/*
+	// ────────────────────────────────────────────────────────────
+
 	r.Register("attr_getBlockAttrs", "获取块属性",
 		s("id", mcp.Description("块 ID"), mcp.Required()),
 		func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -249,6 +297,7 @@ func (r *Registry) RegisterAll() {
 			}
 			return mcp.NewToolResultText(v), nil
 		})
+
 	r.Register("attr_setBlockAttrs", "设置块属性",
 		[]mcp.ToolOption{
 			mcp.WithString("id", mcp.Description("块 ID"), mcp.Required()),
@@ -262,7 +311,10 @@ func (r *Registry) RegisterAll() {
 			return mcp.NewToolResultText(v), nil
 		})
 
-	// ── SQL / Search ──
+	// ────────────────────────────────────────────────────────────
+	// Query & Search (2 tools) — /api/query/sql
+	// ────────────────────────────────────────────────────────────
+
 	r.Register("query_sql", "执行 SQL 查询",
 		s("stmt", mcp.Description("SQL 语句"), mcp.Required()),
 		func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -272,10 +324,11 @@ func (r *Registry) RegisterAll() {
 			}
 			return mcp.NewToolResultText(v), nil
 		})
+
 	r.Register("search_fullTextSearch", "全文搜索（通过 SQL LIKE 实现）",
 		[]mcp.ToolOption{
 			mcp.WithString("query", mcp.Description("搜索关键词"), mcp.Required()),
-			mcp.WithArray("types", mcp.Description("块类型过滤")),
+			mcp.WithArray("types", mcp.Description("块类型过滤，如 [\"doc\",\"h\"]")),
 			nn("limit", mcp.Description("最大结果数（默认 32）")),
 		},
 		func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -303,7 +356,10 @@ func (r *Registry) RegisterAll() {
 			return mcp.NewToolResultText(v), nil
 		})
 
-	// ── Template ──
+	// ────────────────────────────────────────────────────────────
+	// Template (2 tools) — /api/template/*
+	// ────────────────────────────────────────────────────────────
+
 	r.Register("template_render", "渲染模板",
 		[]mcp.ToolOption{
 			mcp.WithString("id", mcp.Description("文档 ID"), mcp.Required()),
@@ -316,6 +372,7 @@ func (r *Registry) RegisterAll() {
 			}
 			return mcp.NewToolResultText(v), nil
 		})
+
 	r.Register("template_renderSprig", "渲染 Sprig 模板",
 		s("template", mcp.Description("模板内容"), mcp.Required()),
 		func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -326,7 +383,10 @@ func (r *Registry) RegisterAll() {
 			return mcp.NewToolResultText(v), nil
 		})
 
-	// ── File ──
+	// ────────────────────────────────────────────────────────────
+	// File (2 tools) — /api/file/*
+	// ────────────────────────────────────────────────────────────
+
 	r.Register("file_getFile", "获取文件内容",
 		s("path", mcp.Description("工作空间路径下的文件路径"), mcp.Required()),
 		func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -336,6 +396,7 @@ func (r *Registry) RegisterAll() {
 			}
 			return mcp.NewToolResultText(v), nil
 		})
+
 	r.Register("file_putFile", "写入文件",
 		[]mcp.ToolOption{
 			mcp.WithString("path", mcp.Description("工作空间路径"), mcp.Required()),
@@ -349,7 +410,10 @@ func (r *Registry) RegisterAll() {
 			return mcp.NewToolResultText(v), nil
 		})
 
-	// ── Export ──
+	// ────────────────────────────────────────────────────────────
+	// Export (2 tools) — /api/export/*
+	// ────────────────────────────────────────────────────────────
+
 	r.Register("export_exportMdContent", "导出文档为 Markdown",
 		s("id", mcp.Description("文档块 ID"), mcp.Required()),
 		func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -359,6 +423,7 @@ func (r *Registry) RegisterAll() {
 			}
 			return mcp.NewToolResultText(v), nil
 		})
+
 	r.Register("export_exportResources", "导出文件与目录为 ZIP",
 		[]mcp.ToolOption{
 			mcp.WithArray("paths", mcp.Description("文件/文件夹路径列表"), mcp.Required()),
@@ -372,7 +437,10 @@ func (r *Registry) RegisterAll() {
 			return mcp.NewToolResultText(v), nil
 		})
 
-	// ── Convert ──
+	// ────────────────────────────────────────────────────────────
+	// Convert (1 tool) — /api/convert/*
+	// ────────────────────────────────────────────────────────────
+
 	r.Register("convert_pandoc", "Pandoc 转换",
 		[]mcp.ToolOption{
 			mcp.WithString("dir", mcp.Description("工作目录名"), mcp.Required()),
@@ -386,7 +454,10 @@ func (r *Registry) RegisterAll() {
 			return mcp.NewToolResultText(v), nil
 		})
 
-	// ── Notification ──
+	// ────────────────────────────────────────────────────────────
+	// Notification (2 tools) — /api/notification/*
+	// ────────────────────────────────────────────────────────────
+
 	r.Register("notification_pushMsg", "推送消息",
 		[]mcp.ToolOption{
 			mcp.WithString("msg", mcp.Description("消息内容"), mcp.Required()),
@@ -399,6 +470,7 @@ func (r *Registry) RegisterAll() {
 			}
 			return mcp.NewToolResultText(v), nil
 		})
+
 	r.Register("notification_pushErrMsg", "推送报错消息",
 		[]mcp.ToolOption{
 			mcp.WithString("msg", mcp.Description("错误消息"), mcp.Required()),
@@ -412,7 +484,10 @@ func (r *Registry) RegisterAll() {
 			return mcp.NewToolResultText(v), nil
 		})
 
-	// ── Network ──
+	// ────────────────────────────────────────────────────────────
+	// Network (1 tool) — /api/network/*
+	// ────────────────────────────────────────────────────────────
+
 	r.Register("network_forwardProxy", "正向代理",
 		[]mcp.ToolOption{
 			mcp.WithString("url", mcp.Description("转发 URL"), mcp.Required()),
@@ -428,7 +503,10 @@ func (r *Registry) RegisterAll() {
 			return mcp.NewToolResultText(v), nil
 		})
 
-	// ── System ──
+	// ────────────────────────────────────────────────────────────
+	// System (3 tools) — /api/system/*
+	// ────────────────────────────────────────────────────────────
+
 	r.Register("system_bootProgress", "获取启动进度", nil,
 		func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 			v, err := call("/api/system/bootProgress", map[string]any{})
@@ -437,6 +515,7 @@ func (r *Registry) RegisterAll() {
 			}
 			return mcp.NewToolResultText(v), nil
 		})
+
 	r.Register("system_version", "获取系统版本", nil,
 		func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 			v, err := call("/api/system/version", map[string]any{})
@@ -445,6 +524,7 @@ func (r *Registry) RegisterAll() {
 			}
 			return mcp.NewToolResultText(v), nil
 		})
+
 	r.Register("system_currentTime", "获取系统当前时间", nil,
 		func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 			v, err := call("/api/system/currentTime", map[string]any{})
@@ -454,7 +534,10 @@ func (r *Registry) RegisterAll() {
 			return mcp.NewToolResultText(v), nil
 		})
 
-	// ── Asset ──
+	// ────────────────────────────────────────────────────────────
+	// Asset (1 tool) — /api/asset/*
+	// ────────────────────────────────────────────────────────────
+
 	r.Register("asset_upload", "上传资源文件",
 		[]mcp.ToolOption{
 			mcp.WithString("assetsDirPath", mcp.Description("资源文件夹路径"), mcp.Required()),
@@ -468,6 +551,3 @@ func (r *Registry) RegisterAll() {
 			return mcp.NewToolResultText(v), nil
 		})
 }
-
-// unused import suppressor
-var _ = json.Marshal
