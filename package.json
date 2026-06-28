@@ -80,5 +80,10 @@
 	},
 	"type": "module",
 	"types": "./dist/index.d.ts",
-	"version": "1.3.1"
+	"version": "1.3.1",
+	"siyuan": {
+		"minVersion": "3.0.0",
+		"maxVersion": "3.x",
+		"apiDoc": "https://github.com/siyuan-note/siyuan/blob/master/API_zh_CN.md"
+	}
 }

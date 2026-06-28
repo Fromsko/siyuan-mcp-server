@@ -15,21 +15,18 @@ const fullTextSearchHandler: CommandHandler = {
         types: z.array(z.string()).optional().describe('Block types filter (e.g. ["doc", "h"])'),
         limit: z.number().optional().default(32).describe('Max results')
     }),
-    handler: async (params: {
-        query: string;
-        types?: string[];
-        limit?: number;
-    }) => {
-        const typesFilter = params.types?.length
-            ? `AND type IN (${params.types.map(t => `'${t}'`).join(',')})`
+    handler: async (params: any): Promise<any> => {
+        const { query, types, limit = 32 } = params as { query: string; types?: string[]; limit?: number };
+        const typesFilter = types?.length
+            ? `AND type IN (${types.map(t => `'${t}'`).join(',')})`
             : '';
-        const stmt = `SELECT * FROM blocks WHERE content LIKE '%${params.query}%' ${typesFilter} LIMIT ${params.limit || 32}`;
+        const stmt = `SELECT * FROM blocks WHERE content LIKE '%${query}%' ${typesFilter} LIMIT ${limit}`;
 
         const response = await client.post('/api/query/sql', { stmt });
         return {
             content: [{
                 type: 'text' as const,
-                text: JSON.stringify(response.data)
+                text: JSON.stringify(response.data || response)
             }]
         };
     },
