@@ -31,7 +31,6 @@ archives:
       siyuan-mcp-server-
       {{- .Os }}-
       {{- .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}
-      {{- if eq .Os "windows" }}.exe{{ end }}
 
 checksum:
   name_template: 'checksums.txt'
