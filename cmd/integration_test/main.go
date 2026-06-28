@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -14,7 +15,7 @@ func main() {
 	pass := func(name string) { fmt.Printf("  ✅ %s\n", name) }
 	fail := func(name, detail string) { fmt.Printf("  ❌ %s: %s\n", name, detail); failures++ }
 
-	// Build server
+	// Build
 	fmt.Println("🔨 Building...")
 	build := exec.Command("go", "build", "-o", "siyuan-mcp-server-go.exe", ".")
 	if out, err := build.CombinedOutput(); err != nil {
@@ -27,33 +28,43 @@ func main() {
 	cmd := exec.Command("./siyuan-mcp-server-go.exe")
 	stdin, _ := cmd.StdinPipe()
 	stdout, _ := cmd.StdoutPipe()
-	stderr, _ := cmd.StderrPipe()
 	cmd.Start()
 	defer cmd.Process.Kill()
 
-	// Read helper
-	readLine := func() map[string]any {
-		buf := make([]byte, 65536)
-		cmd.Process.Signal(os.Interrupt) // nop, just a marker
-		_ = stderr
-		n, err := stdout.Read(buf)
-		if err != nil && n == 0 {
+	// Line-by-line reader to handle pipe buffering on all platforms
+	stdoutReader := bufio.NewReader(stdout)
+	readLine := func(timeout time.Duration) map[string]any {
+		type result struct {
+			m map[string]any
+		}
+		ch := make(chan result, 1)
+		go func() {
+			line, err := stdoutReader.ReadString('\n')
+			if err != nil {
+				ch <- result{}
+				return
+			}
+			var m map[string]any
+			json.Unmarshal([]byte(line), &m)
+			ch <- result{m}
+		}()
+		select {
+		case r := <-ch:
+			return r.m
+		case <-time.After(timeout):
 			return nil
 		}
-		var m map[string]any
-		lines := strings.SplitN(string(buf[:n]), "\n", 2)
-		json.Unmarshal([]byte(lines[0]), &m)
-		return m
 	}
-	time.Sleep(200 * time.Millisecond) // let server start
+
+	time.Sleep(300 * time.Millisecond) // let server fully start
 
 	fmt.Println("\n📋 Test Suite")
-	fmt.Println("============")
+	fmt.Println(strings.Repeat("=", 12))
 
 	// Test 1: initialize
 	fmt.Println("\n1. initialize")
 	fmt.Fprintf(stdin, `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0.0"}}}`+"\n")
-	resp := readLine()
+	resp := readLine(3 * time.Second)
 	if resp == nil {
 		fail("initialize", "no response")
 	} else if info, ok := resp["result"].(map[string]any)["serverInfo"].(map[string]any); ok {
@@ -67,8 +78,7 @@ func main() {
 	fmt.Println("\n2. tools/list")
 	fmt.Fprintf(stdin, `{"jsonrpc":"2.0","method":"notifications/initialized"}`+"\n")
 	fmt.Fprintf(stdin, `{"jsonrpc":"2.0","id":2,"method":"tools/list"}`+"\n")
-	time.Sleep(100 * time.Millisecond)
-	resp = readLine()
+	resp = readLine(3 * time.Second)
 	if resp == nil {
 		fail("tools/list", "no response")
 	} else if tools, ok := resp["result"].(map[string]any)["tools"].([]any); ok {
@@ -78,12 +88,10 @@ func main() {
 		} else {
 			fail("tools/list", fmt.Sprintf("expected >=38, got %d", len(tools)))
 		}
-		// Verify key tools exist
 		names := map[string]bool{}
 		for _, t := range tools {
 			names[t.(map[string]any)["name"].(string)] = true
 		}
-		// Verify all 37 tools + help = 38
 		expected := []string{
 			"help",
 			"notebook_lsNotebooks", "notebook_openNotebook", "notebook_closeNotebook",
@@ -123,8 +131,7 @@ func main() {
 	// Test 3: help tool
 	fmt.Println("\n3. help tool")
 	fmt.Fprintf(stdin, `{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"help","arguments":{}}}`+"\n")
-	time.Sleep(100 * time.Millisecond)
-	resp = readLine()
+	resp = readLine(3 * time.Second)
 	if resp == nil {
 		fail("help", "no response")
 	} else if r, ok := resp["result"].(map[string]any); ok {
@@ -142,8 +149,7 @@ func main() {
 	// Test 4: help with specific tool
 	fmt.Println("\n4. help notebook_createNotebook")
 	fmt.Fprintf(stdin, `{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"help","arguments":{"tool":"notebook_createNotebook"}}}`+"\n")
-	time.Sleep(100 * time.Millisecond)
-	resp = readLine()
+	resp = readLine(3 * time.Second)
 	if resp == nil {
 		fail("help(specific)", "no response")
 	} else if r, ok := resp["result"].(map[string]any); ok {
@@ -159,21 +165,19 @@ func main() {
 	// Test 5: non-existent tool
 	fmt.Println("\n5. non-existent tool error")
 	fmt.Fprintf(stdin, `{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"nonexistent_tool","arguments":{}}}`+"\n")
-	time.Sleep(100 * time.Millisecond)
-	resp = readLine()
+	resp = readLine(3 * time.Second)
 	if resp == nil {
 		fail("unknown tool", "no response")
-	} else if errObj, ok := resp["error"]; ok {
-		pass(fmt.Sprintf("unknown tool error: %v", errObj))
+	} else if _, ok := resp["error"]; ok {
+		pass("unknown tool error (JSON-RPC)")
 	} else {
 		fail("unknown tool", "should have returned error")
 	}
 
-	// Test 6: SiYuan API call error (SiYuan not running → graceful error)
+	// Test 6: SiYuan API error handling
 	fmt.Println("\n6. SiYuan API error handling")
 	fmt.Fprintf(stdin, `{"jsonrpc":"2.0","id":6,"method":"tools/call","params":{"name":"system_version","arguments":{}}}`+"\n")
-	time.Sleep(100 * time.Millisecond)
-	resp = readLine()
+	resp = readLine(3 * time.Second)
 	if resp == nil {
 		fail("system_version", "no response")
 	} else if r, ok := resp["result"].(map[string]any); ok {
@@ -184,12 +188,10 @@ func main() {
 		}
 	}
 
-	// Summary
 	fmt.Println("\n" + strings.Repeat("=", 40))
 	if failures > 0 {
 		fmt.Printf("❌ %d tests FAILED\n", failures)
 		os.Exit(1)
-	} else {
-		fmt.Println("✅ ALL TESTS PASSED")
 	}
+	fmt.Println("✅ ALL TESTS PASSED")
 }
