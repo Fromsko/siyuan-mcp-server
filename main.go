@@ -10,7 +10,7 @@ import (
 	"github.com/Fromsko/siyuan-mcp-server-go/pkg/transport"
 )
 
-var version = "1.0.0"
+var version = "dev"
 
 func main() {
 	mode := flag.String("mode", "stdio", "传输模式: stdio | http")
