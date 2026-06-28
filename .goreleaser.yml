@@ -20,6 +20,11 @@ builds:
     ldflags:
       - -s -w -X main.version={{.Version}}
     mod_timestamp: '{{ .CommitTimestamp }}'
+    hooks:
+      post:
+        - cmd: upx --best --lzma "{{ .Path }}"
+          ignore_failure: true
+          output: true
 
 archives:
   - formats: ['tar.gz']
