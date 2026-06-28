@@ -17,9 +17,9 @@ type request struct {
 }
 
 type response struct {
-	JSONRPC string `json:"jsonrpc"`
-	ID      any    `json:"id"`
-	Result  any    `json:"result,omitempty"`
+	JSONRPC string  `json:"jsonrpc"`
+	ID      any     `json:"id"`
+	Result  any     `json:"result,omitempty"`
 	Error   *rpcErr `json:"error,omitempty"`
 }
 
@@ -30,10 +30,10 @@ type rpcErr struct {
 
 // Tool represents a registered MCP tool.
 type Tool struct {
-	Name        string       `json:"name"`
-	Description string       `json:"description"`
-	InputSchema inputSchema  `json:"inputSchema"`
-	Handler     ToolHandler
+	Name        string      `json:"name"`
+	Description string      `json:"description"`
+	InputSchema inputSchema `json:"inputSchema"`
+	Handler     ToolHandler `json:"-"`
 }
 
 type inputSchema struct {
@@ -42,6 +42,7 @@ type inputSchema struct {
 	Required   []string            `json:"required,omitempty"`
 }
 
+// Property describes a tool parameter.
 type Property struct {
 	Type        string `json:"type"`
 	Description string `json:"description,omitempty"`
@@ -50,7 +51,6 @@ type Property struct {
 // ToolHandler is the function signature for tool execution.
 type ToolHandler func(args map[string]any) (string, error)
 
-// ToolResult is the content returned from a tool.
 type toolResult struct {
 	Content []contentItem `json:"content"`
 	IsError bool          `json:"isError,omitempty"`
@@ -61,7 +61,7 @@ type contentItem struct {
 	Text string `json:"text"`
 }
 
-// Server is a minimal MCP server over stdio.
+// Server is a minimal MCP server over stdio (JSON-RPC 2.0).
 type Server struct {
 	name    string
 	version string
@@ -80,7 +80,7 @@ func NewServer(name, version string) *Server {
 	}
 }
 
-// AddTool registers a tool.
+// AddTool registers a tool with the server.
 func (s *Server) AddTool(name, desc string, properties map[string]Property, required []string, handler ToolHandler) {
 	s.tools = append(s.tools, Tool{
 		Name:        name,
@@ -146,7 +146,6 @@ func (s *Server) handleInitialize(req request) {
 func (s *Server) handleToolsList(req request) {
 	tools := make([]Tool, len(s.tools))
 	copy(tools, s.tools)
-	// Clear handlers before serializing
 	for i := range tools {
 		tools[i].Handler = nil
 	}
@@ -182,21 +181,15 @@ func (s *Server) handleToolsCall(req request) {
 }
 
 func (s *Server) send(id any, result any) {
-	resp := response{
-		JSONRPC: "2.0",
-		ID:      id,
-		Result:  result,
-	}
+	resp := response{JSONRPC: "2.0", ID: id, Result: result}
 	data, _ := json.Marshal(resp)
-	fmt.Fprintf(s.writer, "%s\n", data)
+	data = append(data, '\n')
+	s.writer.Write(data)
 }
 
 func (s *Server) sendError(id any, code int, msg string) {
-	resp := response{
-		JSONRPC: "2.0",
-		ID:      id,
-		Error:   &rpcErr{Code: code, Message: msg},
-	}
+	resp := response{JSONRPC: "2.0", ID: id, Error: &rpcErr{Code: code, Message: msg}}
 	data, _ := json.Marshal(resp)
-	fmt.Fprintf(s.writer, "%s\n", data)
+	data = append(data, '\n')
+	s.writer.Write(data)
 }
