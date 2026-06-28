@@ -29,8 +29,8 @@ builds:
 archives:
   - formats: ['binary']
     name_template: >-
-      siyuan-mcp-server_{{ .Version }}_
-      {{- .Os }}_
+      siyuan-mcp-server-
+      {{- .Os }}-
       {{- .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}
       {{- if eq .Os "windows" }}.exe{{ end }}
 

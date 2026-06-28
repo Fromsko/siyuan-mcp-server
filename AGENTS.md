@@ -91,12 +91,12 @@ git push origin go-mcp
 git push origin go-v1.0.0
 
 # 4. GoReleaser 自动构建并发布（不解压，直接可执行）:
-#    siyuan-mcp-server_1.0.0_linux_amd64
-#    siyuan-mcp-server_1.0.0_linux_arm64
-#    siyuan-mcp-server_1.0.0_darwin_amd64
-#    siyuan-mcp-server_1.0.0_darwin_arm64
-#    siyuan-mcp-server_1.0.0_windows_amd64.exe
-#    siyuan-mcp-server_1.0.0_windows_arm64.exe
+#    siyuan-mcp-server-linux-amd64
+#    siyuan-mcp-server-linux-amd64
+#    siyuan-mcp-server-linux-amd64
+#    siyuan-mcp-server-linux-amd64
+#    siyuan-mcp-server-linux-amd64
+#    siyuan-mcp-server-linux-amd64
 ```
 
 ### 测试覆盖
