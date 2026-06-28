@@ -25,7 +25,7 @@ jobs:
         run: go vet ./...
 
       - name: Build
-        run: go build -v -ldflags="-s -w" -o siyuan-mcp-server-go ./...
+        run: go build -v -o siyuan-mcp-server-go .
 
-      - name: Test
-        run: go test ./... -v -count=1
+      - name: Integration Test
+        run: go run ./cmd/integration_test/
