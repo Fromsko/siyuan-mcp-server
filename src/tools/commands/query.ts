@@ -50,47 +50,31 @@ const sqlHandler: CommandHandler = {
     }
 };
 
-// Block query
+// Block query — 使用官方 getBlockAttrs API
 const blockHandler: CommandHandler = {
     namespace,
     name: 'block',
-    description: 'Query block by ID',
+    description: 'Get block attributes by ID',
     params: z.object({
         id: z.string().describe('Block ID')
     }),
-    handler: createHandler('/api/query/block'),
+    handler: createHandler('/api/attr/getBlockAttrs'),
     documentation: {
-        description: 'Query block by ID',
+        description: 'Get block attributes and metadata. Official endpoint: /api/attr/getBlockAttrs',
         params: {
-            id: {
-                type: 'string',
-                description: 'Block ID',
-                required: true
-            }
+            id: { type: 'string', description: 'Block ID', required: true }
         },
         returns: {
             type: 'object',
-            description: 'Block information',
-            properties: {
-                id: 'Block ID',
-                type: 'Block type',
-                content: 'Block content'
-            }
+            description: 'Block info including id, type, title, updated, and custom attrs',
+            properties: { id: 'Block ID', type: 'Block type', title: 'Block title' }
         },
-        examples: [
-            {
-                description: 'This example retrieves detailed information about a specific block using its unique identifier, including its type and content.',
-                params: {
-                    id: "20200812220555-lj3enxa"
-                },
-                response: {
-                    id: "20200812220555-lj3enxa",
-                    type: "p",
-                    content: "Block content"
-                }
-            }
-        ],
-        apiLink: 'https://github.com/siyuan-note/siyuan/blob/master/API.md#query-block'
+        examples: [{
+            description: 'Get block attributes',
+            params: { id: "20200812220555-lj3enxa" },
+            response: { id: "20200812220555-lj3enxa", type: "doc", title: "My Doc" }
+        }],
+        apiLink: 'https://github.com/siyuan-note/siyuan/blob/master/API_zh_CN.md#获取块属性'
     }
 };
 

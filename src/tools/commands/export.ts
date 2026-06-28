@@ -9,107 +9,65 @@ const namespace = 'export';
 const exportNotebookHandler: CommandHandler = {
     namespace,
     name: 'exportNotebook',
-    description: 'Export notebook',
+    description: 'Export notebook as Markdown ZIP archive (via exportResources)',
     params: z.object({
-        notebook: z.string().describe('Notebook ID'),
-        path: z.string().describe('Export path'),
-        type: z.enum(['markdown', 'pdf', 'word', 'html']).describe('Export type')
+        paths: z.array(z.string()).describe('File or directory paths to export relative to workspace'),
+        name: z.string().optional().describe('Export file name (without .zip)')
     }),
-    handler: createHandler('/api/export/exportNotebook'),
+    handler: createHandler('/api/export/exportResources'),
     documentation: {
-        description: 'Export notebook',
+        description: 'Export notebook files as a ZIP archive. Official endpoint: /api/export/exportResources',
         params: {
-            notebook: {
-                type: 'string',
-                description: 'Notebook ID',
+            paths: {
+                type: 'array',
+                description: 'File or folder paths to export',
                 required: true
             },
-            path: {
+            name: {
                 type: 'string',
-                description: 'Export path',
-                required: true
-            },
-            type: {
-                type: 'string',
-                description: 'Export type: markdown, pdf, word, html',
-                required: true
+                description: 'Export zip filename (without extension)',
+                required: false
             }
         },
         returns: {
             type: 'object',
-            description: 'Operation result',
-            properties: {
-                path: 'Export file path'
-            }
+            description: 'Export result with zip path',
+            properties: { path: 'Path to created .zip file' }
         },
-        examples: [
-            {
-                description: 'This example shows how to export an entire notebook as a Markdown archive, preserving the notebook structure and content in a compressed file.',
-                params: {
-                    notebook: "20210817205410-2kvfpfn",
-                    path: "/path/to/export",
-                    type: "markdown"
-                },
-                response: {
-                    path: "/path/to/export/notebook.zip"
-                }
-            }
-        ],
-        apiLink: 'https://github.com/siyuan-note/siyuan/blob/master/API.md#export-notebook'
+        examples: [{
+            description: 'Export notebook content as zip archive',
+            params: { paths: ["/20210817205410-2kvfpfn"], name: "my-notebook" },
+            response: { path: "temp/export/my-notebook.zip" }
+        }],
+        apiLink: 'https://github.com/siyuan-note/siyuan/blob/master/API_zh_CN.md#导出文件与目录'
     }
 };
 
-// Export document
+// Export document as Markdown
 const exportDocHandler: CommandHandler = {
     namespace,
     name: 'exportDoc',
-    description: 'Export document',
+    description: 'Export document as Markdown text',
     params: z.object({
-        id: z.string().describe('Document ID'),
-        path: z.string().describe('Export path'),
-        type: z.enum(['markdown', 'pdf', 'word', 'html']).describe('Export type')
+        id: z.string().describe('Document block ID to export')
     }),
-    handler: createHandler('/api/export/exportDoc'),
+    handler: createHandler('/api/export/exportMdContent'),
     documentation: {
-        description: 'Export document',
+        description: 'Export document content as Markdown. Official endpoint: /api/export/exportMdContent',
         params: {
-            id: {
-                type: 'string',
-                description: 'Document ID',
-                required: true
-            },
-            path: {
-                type: 'string',
-                description: 'Export path',
-                required: true
-            },
-            type: {
-                type: 'string',
-                description: 'Export type: markdown, pdf, word, html',
-                required: true
-            }
+            id: { type: 'string', description: 'Document block ID', required: true }
         },
         returns: {
             type: 'object',
-            description: 'Operation result',
-            properties: {
-                path: 'Export file path'
-            }
+            description: 'Exported content',
+            properties: { hPath: 'Human readable path', content: 'Markdown content' }
         },
-        examples: [
-            {
-                description: 'This example demonstrates exporting a single document as a PDF file, converting all content and formatting to a portable document format.',
-                params: {
-                    id: "20210817205410-2kvfpfn",
-                    path: "/path/to/export",
-                    type: "pdf"
-                },
-                response: {
-                    path: "/path/to/export/document.pdf"
-                }
-            }
-        ],
-        apiLink: 'https://github.com/siyuan-note/siyuan/blob/master/API.md#export-document'
+        examples: [{
+            description: 'Export a document as Markdown text',
+            params: { id: "20210817205410-2kvfpfn" },
+            response: { hPath: "/foo/bar", content: "# Title\n\nContent..." }
+        }],
+        apiLink: 'https://github.com/siyuan-note/siyuan/blob/master/API_zh_CN.md#导出-markdown-文本'
     }
 };
 

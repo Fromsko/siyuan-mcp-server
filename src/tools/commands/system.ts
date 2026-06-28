@@ -11,7 +11,7 @@ const getBootProgressHandler: CommandHandler = {
     name: 'getBootProgress',
     description: 'Get boot progress',
     params: z.object({}),
-    handler: createHandler('/api/system/getBootProgress'),
+    handler: createHandler('/api/system/bootProgress'),
     documentation: {
         description: 'Get boot progress',
         params: {},

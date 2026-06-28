@@ -1,109 +1,62 @@
 import { z } from 'zod';
-import { createHandler } from '../../utils/client.js';
 import { registry } from '../../utils/registry.js';
+import { client } from '../../utils/client.js';
 import { CommandHandler } from '../../utils/registry.js';
 
 const namespace = 'search';
 
-// Full text search
+// Full text search — 使用 SQL LIKE 实现，因为官方 API 没有 /api/search/ 端点
 const fullTextSearchHandler: CommandHandler = {
     namespace,
     name: 'fullTextSearch',
-    description: 'Full text search',
+    description: 'Full text search via SQL (official API has no /api/search endpoint)',
     params: z.object({
-        query: z.string().describe('Search query'),
-        method: z.number().optional().describe('Search method: 0 keyword, 1 query, 2 regex'),
-        types: z.array(z.string()).optional().describe('Search types'),
-        paths: z.array(z.string()).optional().describe('Search paths'),
-        groupBy: z.number().optional().describe('Group by: 0 none, 1 notebook'),
-        orderBy: z.number().optional().describe('Order by: 0 none, 1 name, 2 size, 3 updated'),
-        page: z.number().optional().describe('Page number'),
-        limit: z.number().optional().describe('Results per page')
+        query: z.string().describe('Search keyword'),
+        types: z.array(z.string()).optional().describe('Block types filter (e.g. ["doc", "h"])'),
+        limit: z.number().optional().default(32).describe('Max results')
     }),
-    handler: createHandler('/api/search/fullTextSearch'),
+    handler: async (params: {
+        query: string;
+        types?: string[];
+        limit?: number;
+    }) => {
+        const typesFilter = params.types?.length
+            ? `AND type IN (${params.types.map(t => `'${t}'`).join(',')})`
+            : '';
+        const stmt = `SELECT * FROM blocks WHERE content LIKE '%${params.query}%' ${typesFilter} LIMIT ${params.limit || 32}`;
+
+        const response = await client.post('/api/query/sql', { stmt });
+        return {
+            content: [{
+                type: 'text' as const,
+                text: JSON.stringify(response.data)
+            }]
+        };
+    },
     documentation: {
-        description: 'Full text search',
+        description: 'Search notes by keyword using SQL LIKE query (official SiYuan API has no dedicated search endpoint)',
         params: {
-            query: {
-                type: 'string',
-                description: 'Search query',
-                required: true
-            },
-            method: {
-                type: 'number',
-                description: 'Search method: 0 keyword, 1 query, 2 regex',
-                required: false
-            },
-            types: {
-                type: 'array',
-                description: 'Search types',
-                required: false
-            },
-            paths: {
-                type: 'array',
-                description: 'Search paths',
-                required: false
-            },
-            groupBy: {
-                type: 'number',
-                description: 'Group by: 0 none, 1 notebook',
-                required: false
-            },
-            orderBy: {
-                type: 'number',
-                description: 'Order by: 0 none, 1 name, 2 size, 3 updated',
-                required: false
-            },
-            page: {
-                type: 'number',
-                description: 'Page number',
-                required: false
-            },
-            limit: {
-                type: 'number',
-                description: 'Results per page',
-                required: false
-            }
+            query: { type: 'string', description: 'Search keyword', required: true },
+            types: { type: 'array', description: 'Block type filter', required: false },
+            limit: { type: 'number', description: 'Max results (default 32)', required: false }
         },
         returns: {
             type: 'object',
-            description: 'Search results',
+            description: 'Matching blocks',
             properties: {
-                blocks: 'Array of matched blocks',
-                matchedBlockCount: 'Total number of matched blocks',
-                matchedRootCount: 'Total number of matched root blocks'
+                data: 'Array of matching block rows'
             }
         },
-        examples: [
-            {
-                description: 'This example performs a keyword-based search across documents and headings in a specific path, grouping results by notebook and returning the first page of 10 matches.',
-                params: {
-                    query: "keyword",
-                    method: 0,
-                    types: ["doc", "heading"],
-                    paths: ["/path/to/search"],
-                    groupBy: 1,
-                    orderBy: 0,
-                    page: 1,
-                    limit: 10
-                },
-                response: {
-                    blocks: [
-                        {
-                            id: "20200812220555-lj3enxa",
-                            content: "Block content with keyword"
-                        }
-                    ],
-                    matchedBlockCount: 1,
-                    matchedRootCount: 1
-                }
-            }
-        ],
-        apiLink: 'https://github.com/siyuan-note/siyuan/blob/master/API.md#full-text-search'
+        examples: [{
+            description: 'Search blocks containing "keyword"',
+            params: { query: "keyword", types: ["doc", "h"], limit: 10 },
+            response: { data: [{ id: "20200812220555-lj3enxa", content: "Block with keyword" }] }
+        }],
+        apiLink: 'https://github.com/siyuan-note/siyuan/blob/master/API_zh_CN.md#执行-sql-查询'
     }
 };
 
 // Register all search related commands
 export function registerSearchHandlers() {
     registry.registerCommand(fullTextSearchHandler);
-} 
+}
