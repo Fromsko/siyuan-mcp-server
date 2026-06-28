@@ -1,4 +1,6 @@
-# This workflow will run tests using node and then publish a package to GitHub Packages when a release is created
+# This workflow will run tests using node and then publish a package to npm
+# when a release tag is created ON THE main BRANCH.
+# Tag pushes from other branches (e.g. go-mcp) are skipped.
 # For more information see: https://docs.github.com/en/actions/publishing-packages/publishing-nodejs-packages
 
 name: Node.js Package
@@ -9,7 +11,28 @@ on:
       - 'v*'
 
 jobs:
+  # Guard: only proceed when the tagged commit is reachable from main.
+  # This prevents Go release tags (on the go-mcp branch) from triggering npm publish.
+  check-branch:
+    runs-on: ubuntu-latest
+    outputs:
+      on-main: ${{ steps.check.outputs.on-main }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: check
+        run: |
+          if git branch -r --contains ${{ github.sha }} | grep -qE 'origin/main$'; then
+            echo "on-main=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "on-main=false" >> "$GITHUB_OUTPUT"
+            echo "Tag is not on main branch — skipping npm publish/release"
+          fi
+
   build:
+    needs: check-branch
+    if: needs.check-branch.outputs.on-main == 'true'
     runs-on: ubuntu-latest
     strategy:
       matrix:
