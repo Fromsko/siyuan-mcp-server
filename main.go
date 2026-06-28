@@ -4,13 +4,28 @@ import (
 	"flag"
 	"log"
 	"os"
+	"runtime/debug"
 
 	"github.com/Fromsko/siyuan-mcp-server-go/pkg/siyuan"
 	"github.com/Fromsko/siyuan-mcp-server-go/pkg/tools"
 	"github.com/Fromsko/siyuan-mcp-server-go/pkg/transport"
 )
 
+// version is set via ldflags at build time:
+//   go build -ldflags="-X main.version=v1.0.0" .
+// GoReleaser injects the git tag automatically.
 var version = "dev"
+
+func init() {
+	// Fallback: detect from Go module build info (go install scenario)
+	if version == "dev" {
+		if info, ok := debug.ReadBuildInfo(); ok {
+			if info.Main.Version != "" && info.Main.Version != "(devel)" {
+				version = info.Main.Version
+			}
+		}
+	}
+}
 
 func main() {
 	mode := flag.String("mode", "stdio", "传输模式: stdio | http")
