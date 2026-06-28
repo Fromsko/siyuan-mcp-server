@@ -22,8 +22,7 @@ builds:
     mod_timestamp: '{{ .CommitTimestamp }}'
     hooks:
       post:
-        - cmd: upx --best --lzma "{{ .Path }}"
-          ignore_failure: true
+        - cmd: upx --best --lzma "{{ .Path }}" || true
           output: true
 
 archives:
