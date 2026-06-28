@@ -22,7 +22,7 @@ builds:
     mod_timestamp: '{{ .CommitTimestamp }}'
     hooks:
       post:
-        - cmd: upx --best --lzma "{{ .Path }}" || true
+        - cmd: sh -c 'if [ "{{ .Os }}" = "darwin" ]; then echo "skip upx on darwin"; exit 0; fi; upx --best --lzma "{{ .Path }}" || echo "upx failed, skipping"'
           output: true
 
 archives:
