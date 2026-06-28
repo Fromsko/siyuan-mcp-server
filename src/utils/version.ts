@@ -4,8 +4,15 @@ import { fileURLToPath } from 'node:url';
 
 export function getPackageVersion(fallback = '0.0.0'): string {
     try {
-        const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-        const packageJson = JSON.parse(readFileSync(resolve(packageRoot, 'package.json'), 'utf8'));
+        // __dirname equivalent in ESM
+        const currentDir = dirname(fileURLToPath(import.meta.url));
+        const packageRoot = resolve(currentDir, '../..');
+        const packagePath = resolve(packageRoot, 'package.json');
+        const content = readFileSync(packagePath, 'utf8');
+        if (!content || content.trim() === '') {
+            return fallback;
+        }
+        const packageJson = JSON.parse(content);
         return typeof packageJson.version === 'string' ? packageJson.version : fallback;
     } catch {
         return fallback;

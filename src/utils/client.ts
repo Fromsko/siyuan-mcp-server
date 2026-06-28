@@ -63,23 +63,28 @@ class SiYuanClient {
         this.axiosInstance.interceptors.response.use(
             response => response.data,
             error => {
-                // 增强错误处理
-                if (error.response) {
-                    console.error('😱 API 响应错误:', {
-                        status: error.response.status,
-                        data: error.response.data,
-                        url: error.config?.url
-                    });
+                // 生产模式下仅记录关键错误，避免干扰 MCP 协议
+                if (process.env.NODE_ENV === 'development') {
+                    if (error.response) {
+                        console.error('😱 API 响应错误:', {
+                            status: error.response.status,
+                            data: error.response.data,
+                            url: error.config?.url
+                        });
 
-                    // 如果是认证错误，提供更友好的错误信息
-                    if (error.response.status === 401) {
-                        console.error('🔒 认证失败：请检查 SIYUAN_TOKEN 是否正确');
+                        // 如果是认证错误，提供更友好的错误信息
+                        if (error.response.status === 401) {
+                            console.error('🔒 认证失败：请检查 SIYUAN_TOKEN 是否正确');
+                        }
+                    } else if (error.request) {
+                        console.error('🌐 API 请求错误:', error.message);
+                        console.error('🔍 请检查：1) 思源笔记是否正在运行 2) API 服务是否开启 3) 网络连接是否正常');
+                    } else {
+                        console.error('❌ 其他错误:', error.message);
                     }
-                } else if (error.request) {
-                    console.error('🌐 API 请求错误:', error.message);
-                    console.error('🔍 请检查：1) 思源笔记是否正在运行 2) API 服务是否开启 3) 网络连接是否正常');
                 } else {
-                    console.error('❌ 其他错误:', error.message);
+                    // 生产模式：只记录简要错误信息
+                    console.error('[siyuan-mcp] API error:', error.message);
                 }
                 return Promise.reject(error);
             }
