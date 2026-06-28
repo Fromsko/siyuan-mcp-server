@@ -83,12 +83,38 @@ func main() {
 		for _, t := range tools {
 			names[t.(map[string]any)["name"].(string)] = true
 		}
-		for _, name := range []string{"help", "notebook_lsNotebooks", "filetree_createDocWithMd", "query_sql", "system_version"} {
+		// Verify all 37 tools + help = 38
+		expected := []string{
+			"help",
+			"notebook_lsNotebooks", "notebook_openNotebook", "notebook_closeNotebook",
+			"notebook_renameNotebook", "notebook_createNotebook", "notebook_removeNotebook",
+			"notebook_getNotebookConf", "notebook_setNotebookConf",
+			"filetree_createDocWithMd", "filetree_renameDoc", "filetree_removeDoc",
+			"filetree_moveDocs", "filetree_getHPathByPath", "filetree_getHPathByID",
+			"block_insertBlock", "block_updateBlock", "block_deleteBlock",
+			"block_moveBlock", "block_getBlockKramdown",
+			"attr_getBlockAttrs", "attr_setBlockAttrs",
+			"query_sql", "search_fullTextSearch",
+			"template_render", "template_renderSprig",
+			"file_getFile", "file_putFile",
+			"export_exportMdContent", "export_exportResources",
+			"convert_pandoc",
+			"notification_pushMsg", "notification_pushErrMsg",
+			"network_forwardProxy",
+			"system_bootProgress", "system_version", "system_currentTime",
+			"asset_upload",
+		}
+		missing := 0
+		for _, name := range expected {
 			if names[name] {
 				pass(fmt.Sprintf("  tool: %s", name))
 			} else {
 				fail(fmt.Sprintf("  tool: %s", name), "MISSING")
+				missing++
 			}
+		}
+		if missing == 0 {
+			pass(fmt.Sprintf("regression: all %d tools present", len(expected)))
 		}
 	} else {
 		fail("tools/list", fmt.Sprintf("%v", resp))
