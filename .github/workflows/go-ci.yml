@@ -19,7 +19,7 @@ jobs:
       - run: go run ./cmd/integration_test/
 
   goreleaser:
-    if: startsWith(github.ref, 'refs/tags/v')
+if: startsWith(github.ref, 'refs/tags/go-v')
     needs: test
     runs-on: ubuntu-latest
     permissions:
