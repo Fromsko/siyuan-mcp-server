@@ -86,17 +86,17 @@ git add -A
 git commit -m "🐛 fix: ..."
 
 # 3. 打 tag（触发 GoReleaser）
-git tag v1.0.0
+git tag go-v1.0.0
 git push origin go-mcp
-git push origin v1.0.0
+git push origin go-v1.0.0
 
-# 4. GoReleaser 自动构建并发布:
-#    siyuan-mcp-server_v1.0.0_linux_amd64.tar.gz
-#    siyuan-mcp-server_v1.0.0_linux_arm64.tar.gz
-#    siyuan-mcp-server_v1.0.0_darwin_amd64.tar.gz
-#    siyuan-mcp-server_v1.0.0_darwin_arm64.tar.gz
-#    siyuan-mcp-server_v1.0.0_windows_amd64.zip
-#    siyuan-mcp-server_v1.0.0_windows_arm64.zip
+# 4. GoReleaser 自动构建并发布（不解压，直接可执行）:
+#    siyuan-mcp-server_1.0.0_linux_amd64
+#    siyuan-mcp-server_1.0.0_linux_arm64
+#    siyuan-mcp-server_1.0.0_darwin_amd64
+#    siyuan-mcp-server_1.0.0_darwin_arm64
+#    siyuan-mcp-server_1.0.0_windows_amd64.exe
+#    siyuan-mcp-server_1.0.0_windows_arm64.exe
 ```
 
 ### 测试覆盖

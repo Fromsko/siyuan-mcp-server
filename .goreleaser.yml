@@ -27,14 +27,12 @@ builds:
           output: true
 
 archives:
-  - formats: ['tar.gz']
+  - formats: ['binary']
     name_template: >-
       siyuan-mcp-server_{{ .Version }}_
       {{- .Os }}_
       {{- .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}
-    format_overrides:
-      - goos: windows
-        formats: ['zip']
+      {{- if eq .Os "windows" }}.exe{{ end }}
 
 checksum:
   name_template: 'checksums.txt'
