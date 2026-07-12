@@ -50,7 +50,28 @@ const sqlHandler: CommandHandler = {
     }
 };
 
+// Flush transaction
+const flushTransactionHandler: CommandHandler = {
+    namespace,
+    name: 'flushTransaction',
+    description: 'Flush the transaction journal to the database',
+    params: z.object({}),
+    handler: createHandler('/api/sqlite/flushTransaction'),
+    documentation: {
+        description: 'Flush the transaction journal to the database. Useful after batch writes to ensure data persistence.',
+        params: {},
+        returns: { type: 'object', description: 'Operation result', properties: {} },
+        examples: [{
+            description: 'Flush pending transactions',
+            params: {},
+            response: {}
+        }],
+        apiLink: 'https://github.com/siyuan-note/siyuan/blob/master/API.md#flush-transaction'
+    }
+};
+
 // Register all SQL related commands
 export function registerSqlHandlers() {
     registry.registerCommand(sqlHandler);
-} 
+    registry.registerCommand(flushTransactionHandler);
+}
