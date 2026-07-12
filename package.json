@@ -84,6 +84,6 @@
 	"siyuan": {
 		"minVersion": "3.0.0",
 		"maxVersion": "3.x",
-		"apiDoc": "https://github.com/siyuan-note/siyuan/blob/master/API_zh_CN.md"
+		"apiDoc": "https://github.com/siyuan-note/siyuan/blob/master/docs/API.md"
 	}
 }

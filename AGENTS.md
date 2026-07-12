@@ -84,7 +84,7 @@ git push origin vNEW
   "siyuan": {
     "minVersion": "3.0.0",
     "maxVersion": "3.x",
-    "apiDoc": "https://github.com/siyuan-note/siyuan/blob/master/API_zh_CN.md"
+    "apiDoc": "https://github.com/siyuan-note/siyuan/blob/master/docs/API.md"
   }
 }
 ```
@@ -93,7 +93,7 @@ git push origin vNEW
 
 ### API 对比方法
 
-1. 获取官方文档：`https://raw.githubusercontent.com/siyuan-note/siyuan/master/API_zh_CN.md`
+1. 获取官方文档：`https://raw.githubusercontent.com/siyuan-note/siyuan/master/docs/API.md`
 2. 提取所有 `/api/` 路径
 3. 逐一对比代码中的 `createHandler('...')` 调用
 4. 标注：✅ 匹配 / ❌ 不存在 / ⚠️ 参数不匹配

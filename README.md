@@ -1,401 +1,116 @@
 <div align="center">
-  
-  # 🧠 思源笔记 MCP 服务器
-  
-  **为 Claude Desktop 提供思源笔记集成的 Model Context Protocol 服务器**
-  
-  [![npm version](https://img.shields.io/npm/v/@fromsko/siyuan-mcp-server.svg)](https://www.npmjs.com/package/@fromsko/siyuan-mcp-server)
-  [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
-  [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-  [![Node.js](https://img.shields.io/badge/Node.js-43853D?logo=node.js&logoColor=white)](https://nodejs.org/)
-  
-  🚀 让 AI 助手直接管理您的思源笔记
-  
+
+# 🧠 思源笔记 MCP 服务器
+
+**让 AI 助手直接操作思源笔记的 Model Context Protocol 服务器**
+
+[![npm version](https://img.shields.io/npm/v/@fromsko/siyuan-mcp-server.svg)](https://www.npmjs.com/package/@fromsko/siyuan-mcp-server)
+[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
+[![SiYuan API](https://img.shields.io/badge/SiYuan%20API-3.x-007ACC.svg)](docs/ref/siyuan-api.md)
+
 </div>
 
 ---
 
-## 📖 项目介绍
+## 适配版本
 
-**思源笔记 MCP 服务器** 是一个专为 [思源笔记](https://b3log.org/siyuan/) 设计的 Model Context Protocol 服务器实现。通过此服务器，您可以在 Claude Desktop 等支持 MCP 的 AI 客户端中直接操作思源笔记，实现笔记管理、内容搜索、文档编辑等功能的无缝集成。
+| 项目 | 版本 |
+|---|---|
+| 思源笔记 | >= 3.0.0（已验证 3.7.1） |
+| SiYuan API | [docs/API.md](https://github.com/siyuan-note/siyuan/blob/master/docs/API.md)（50 个非 Database 端点） |
+| Node.js | >= 18.0.0 |
+| MCP SDK | @modelcontextprotocol/sdk ^1.8.0 |
 
-### ✨ 主要特性
-
-- 🔗 **原生集成** - 在 AI 助手中直接操作思源笔记
-- 📚 **功能完整** - 支持笔记本、文档、块级操作的全套功能
-- 🔍 **智能搜索** - 全文检索、SQL 查询、标签搜索等多种搜索方式
-- 🛠️ **开发者友好** - TypeScript 编写，提供完整的类型定义和 API 文档
-- 📦 **简单部署** - 支持 npm、Docker 多种安装方式
-- 🔒 **安全认证** - 基于 Token 的安全认证机制
-
-## 🚀 快速开始
-
-### 📋 环境要求
-
-- **Node.js** >= 18.0.0
-- **思源笔记** 正在运行且已开启 API 服务
-- **Claude Desktop** 或其他支持 MCP 的客户端
-- 思源笔记 API Token（设置 → 关于 → API token）
-
-### 📥 安装方式
-
-#### 1. 全局安装（推荐）
+## 快速开始
 
 ```bash
-# 使用 npm
+# 直接运行
+SIYUAN_TOKEN=your-api-token npx @fromsko/siyuan-mcp-server
+
+# 全局安装
 npm install -g @fromsko/siyuan-mcp-server
-
-# 使用 pnpm
-pnpm add -g @fromsko/siyuan-mcp-server
+SIYUAN_TOKEN=your-api-token siyuan-mcp-server
 ```
 
-#### 2. 直接使用（无需安装）
+| 环境变量 | 必需 | 说明 | 默认值 |
+|---|---|---|---|
+| `SIYUAN_TOKEN` | ✅ | 思源笔记 API Token（设置 → 关于） | — |
+| `SIYUAN_API_URL` | ❌ | 思源 API 地址 | `http://localhost:6806` |
+
+## 给 LLM 的配置说明
+
+如果你是 AI 助手，请将以下配置添加到你的 MCP 客户端配置中：
+
+```json
+{
+  "mcpServers": {
+    "siyuan": {
+      "command": "npx",
+      "args": ["-y", "@fromsko/siyuan-mcp-server"],
+      "env": {
+        "SIYUAN_TOKEN": "<用户提供的 API Token>",
+        "SIYUAN_API_URL": "http://localhost:6806"
+      }
+    }
+  }
+}
+```
+
+配置文件位置：
+- **Claude Desktop**: `~/Library/Application Support/Claude/claude_desktop_config.json`（macOS）或 `%APPDATA%\Claude\claude_desktop_config.json`（Windows）
+- **Cursor**: `.cursor/mcp.json`
+
+配置完成后重启客户端，即可使用 50 个思源笔记操作工具（笔记本管理、文档操作、块级编辑、全文搜索、SQL 查询等）。
+
+## 功能概览
+
+| 类别 | 命令空间 | 端点数 | 能力 |
+|---|---|---|---|
+| 📓 笔记本 | `notebook.*` | 8 | 创建/删除/重命名/配置 |
+| 📄 文档 | `filetree.*` | 11 | 创建/删除/移动/重命名（支持 hpath 自动解析） |
+| 🧱 块操作 | `block.*` | 11 | 插入/更新/删除/移动/折叠/展开 |
+| 🔍 搜索 | `search.*` / `sql.*` | 3 | 全文搜索/SQL 查询/事务刷新 |
+| 📎 属性 | `attr.*` | 2 | 设置/获取块属性 |
+| 📁 文件 | `file.*` | 5 | 读写/删除/重命名/列目录 |
+| 📋 模板 | `template.*` | 2 | 渲染模板/Sprig |
+| 📤 导出 | `export.*` | 2 | 导出 Markdown/导出资源包 |
+| 🔄 转换 | `convert.*` | 1 | Pandoc 格式转换 |
+| 🔔 通知 | `notification.*` | 2 | 推送消息 |
+| 🌐 网络 | `network.*` | 1 | 正向代理 |
+| ⚙️ 系统 | `system.*` | 3 | 版本/启动进度/当前时间 |
+
+## 开发
 
 ```bash
-npx @fromsko/siyuan-mcp-server
-```
-
-#### 3. Docker 方式
-
-```bash
-docker pull fromsko/siyuan-mcp-server
-```
-
-### ⚙️ 快速配置
-
-#### 环境变量设置
-
-| 环境变量         | 必需 | 说明                                      |
-| ---------------- | ---- | ----------------------------------------- |
-| `SIYUAN_TOKEN`   | ✅   | 思源笔记 API 令牌，用于身份验证           |
-| `SIYUAN_API_URL` | ❌   | 思源笔记 API 地址，默认为 http://localhost:6806，可用于连接远程思源笔记服务 |
-
-#### 本地仓库动态端口配置
-
-SiYuan 桌面端的内核端口可能会在重启后变化。使用本地仓库运行时，可以让 `run-local-mcp.sh` 自动读取 `~/.config/siyuan/port.json` 并设置 `SIYUAN_API_URL`：
-
-如果 MCP 客户端支持直接执行脚本：
-
-```json
-{
-	"mcpServers": {
-		"siyuan": {
-			"command": "/path/to/siyuan-mcp-server/run-local-mcp.sh",
-			"args": [],
-			"env": {
-				"SIYUAN_TOKEN": "your-api-token"
-			}
-		}
-	}
-}
-```
-
-如果 MCP 客户端使用 command 数组格式，可以通过 `/bin/bash` 执行脚本：
-
-```json
-{
-	"command": [
-		"/bin/bash",
-		"/path/to/siyuan-mcp-server/run-local-mcp.sh"
-	],
-	"environment": {
-		"SIYUAN_TOKEN": "your-api-token"
-	}
-}
-```
-
-运行前请先启动 SiYuan，并确保本地仓库已经执行过 `npm run build`。
-
-#### 在 Claude Desktop 中配置
-
-在 Claude Desktop 配置文件中添加以下内容：
-
-```json
-{
-	"mcpServers": {
-		"siyuan": {
-			"command": "npx",
-			"args": ["-y", "@fromsko/siyuan-mcp-server"],
-			"env": {
-				"SIYUAN_TOKEN": "your-api-token"
-			}
-		}
-	}
-}
-```
-
-**配置文件位置：**
-
-- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
-
-#### 命令行直接使用
-
-```bash
-# 全局安装后直接使用
-SIYUAN_TOKEN=your-token siyuan-mcp-server
-
-# 使用 npx（无需安装）
-SIYUAN_TOKEN=your-token npx @fromsko/siyuan-mcp-server
-
-# Docker 运行
-docker run --rm -i \
-  -e SIYUAN_TOKEN=your-token \
-  fromsko/siyuan-mcp-server
-```
-
-## 📚 功能与使用
-
-### 🔧 可用工具
-
-本 MCP 服务器提供以下核心功能：
-
-| 功能类别          | 描述                     | 主要命令     |
-| ----------------- | ------------------------ | ------------ |
-| 📓 **笔记本管理** | 创建、删除、重命名笔记本 | `notebook.*` |
-| 📄 **文档操作**   | 创建、编辑、删除文档     | `filetree.*` |
-| 🧱 **块级操作**   | 插入、更新、删除内容块   | `block.*`    |
-| 🔍 **搜索功能**   | 全文搜索、SQL 查询       | `search.*`   |
-| 📋 **模板系统**   | 模板创建和渲染           | `template.*` |
-| 📊 **数据查询**   | 复杂数据库查询           | `sql.*`      |
-
-### 💡 使用示例
-
-#### 1. 创建新笔记本
-
-```json
-{
-	"type": "executeCommand",
-	"params": {
-		"type": "notebook.createNotebook",
-		"params": {
-			"name": "AI 学习笔记"
-		}
-	}
-}
-```
-
-#### 2. 全文搜索内容
-
-```json
-{
-	"type": "executeCommand",
-	"params": {
-		"type": "search.fullTextSearch",
-		"params": {
-			"query": "机器学习",
-			"method": 0
-		}
-	}
-}
-```
-
-#### 3. 创建带内容的文档
-
-```json
-{
-	"type": "executeCommand",
-	"params": {
-		"type": "filetree.createDocWithMd",
-		"params": {
-			"notebook": "notebook-id",
-			"path": "/今日学习总结",
-			"markdown": "# 今日学习总结\n\n## 主要收获\n\n1. 学习了...\n2. 理解了..."
-		}
-	}
-}
-```
-
-### 🆘 获取帮助
-
-获取特定命令的详细帮助信息：
-
-```json
-{
-	"type": "help",
-	"params": {
-		"type": "notebook.createNotebook"
-	}
-}
-```
-
-## 🔧 开发指南
-
-### 本地开发环境搭建
-
-```bash
-# 克隆项目
-git clone https://github.com/fromsko/siyuan-mcp-server.git
+git clone https://github.com/Fromsko/siyuan-mcp-server.git
 cd siyuan-mcp-server
-
-# 安装依赖
-pnpm install
-
-# 开发模式启动
-SIYUAN_TOKEN=your-token pnpm dev
-
-# 构建生产版本
-pnpm build
-
-# 运行测试
-pnpm test
+npm install && npm run build && npm test
 ```
 
-### 技术栈与要求
+详细开发文档：
 
-- **运行时**: Node.js >= 18.0.0
-- **语言**: TypeScript >= 5.0.0
-- **包管理**: pnpm（推荐）或 npm
-- **框架**: @modelcontextprotocol/sdk
-- **构建工具**: TypeScript Compiler
+| 文档 | 说明 |
+|---|---|
+| [docs/development.md](docs/development.md) | 开发指南、项目结构、添加端点流程 |
+| [docs/mcp-usage.md](docs/mcp-usage.md) | MCP 使用指南 |
+| [docs/ref/siyuan-api.md](docs/ref/siyuan-api.md) | 官方 SiYuan API 文档 |
+| [llms.txt](llms.txt) | LLM 导向的项目简介 |
+| [AGENTS.md](AGENTS.md) | 提交规范和开发约束 |
 
-### Docker 开发
+## 问题排查
 
-```bash
-# 构建开发镜像
-docker build -t siyuan-mcp-server:dev .
+**无法连接思源笔记** → 检查：思源是否运行、Token 是否正确、端口是否正确（默认 6806）
 
-# 运行开发容器
-docker run --rm -it \
-  -e SIYUAN_TOKEN=your-token \
-  -v $(pwd):/app \
-  siyuan-mcp-server:dev
-```
+**命令执行失败** → 确认笔记本/文档存在、Token 权限足够
 
-## 🐛 问题排查
+**连接远程思源** → 设置 `SIYUAN_API_URL=http://your-server:6806`
 
-### 常见问题解答
+## 开源协议
 
-**❓ 服务器启动失败，提示"缺少 SIYUAN_TOKEN"**
+ISC — 详见 [LICENSE](LICENSE)
 
-> 请确保正确设置了 `SIYUAN_TOKEN` 环境变量。获取方式：思源笔记 → 设置 → 关于 → API token
+## 致谢
 
-**❓ 无法连接到思源笔记**
-
-> 请检查以下几点：
->
-> - 思源笔记是否正在运行
-> - API 服务是否已开启（默认端口 6806）
-> - Token 是否正确且未过期
-> - 防火墙是否阻止了连接
-> - 如需连接远程思源笔记，请设置 `SIYUAN_API_URL` 环境变量指向正确的地址（例如：`http://your-server-ip:6806`）
-
-**❓ 如何连接远程思源笔记服务**
-
-> 默认情况下，服务器会连接到 `http://localhost:6806`。要连接到远程思源笔记服务，请设置 `SIYUAN_API_URL` 环境变量：
->
-> ```bash
-> # 连接到远程服务器
-> SIYUAN_TOKEN=your-token SIYUAN_API_URL=http://your-server-ip:6806 siyuan-mcp-server
-> ```
->
-> 或在 Claude Desktop 配置中：
->
-> ```json
-> {
-> 	"mcpServers": {
-> 		"siyuan": {
-> 			"command": "npx",
-> 			"args": ["-y", "@fromsko/siyuan-mcp-server"],
-> 			"env": {
-> 				"SIYUAN_TOKEN": "your-api-token",
-> 				"SIYUAN_API_URL": "http://your-server-ip:6806"
-> 			}
-> 		}
-> 	}
-> }
-> ```
-
-**❓ Claude Desktop 无法识别 MCP 服务器**
-
-> 请尝试以下解决方案：
->
-> - 检查配置文件 JSON 格式是否正确
-> - 重启 Claude Desktop 应用
-> - 查看 Claude Desktop 日志获取详细错误信息
-> - 确认 npx 命令可以正常执行
-
-**❓ 命令执行失败或返回错误**
-
-> - 确认思源笔记中存在相应的笔记本或文档
-> - 检查 Token 权限是否足够
-> - 查看服务器日志获取详细错误信息
-
-### 调试模式
-
-启用详细的调试日志：
-
-```bash
-DEBUG=siyuan-mcp:* SIYUAN_TOKEN=your-token siyuan-mcp-server
-```
-
-### 日志分析
-
-服务器会输出以下类型的日志：
-
-- `INFO`: 一般信息，如服务启动、连接状态
-- `WARN`: 警告信息，如参数错误、连接异常
-- `ERROR`: 错误信息，如 API 调用失败、认证失败
-
-## 🤝 贡献指南
-
-我们热烈欢迎社区贡献！您可以通过以下方式参与：
-
-### 如何贡献
-
-1. **Fork 项目** - 点击右上角的 Fork 按钮
-2. **创建分支** - `git checkout -b feature/awesome-feature`
-3. **提交代码** - `git commit -am 'Add awesome feature'`
-4. **推送分支** - `git push origin feature/awesome-feature`
-5. **创建 PR** - 在 GitHub 上创建 Pull Request
-
-### 开发规范
-
-- **代码风格**: 遵循 TypeScript 严格模式
-- **测试覆盖**: 为新功能编写单元测试
-- **文档更新**: 更新相关的 API 文档和使用说明
-- **提交规范**: 使用清晰的 commit message
-
-### 报告问题
-
-发现 Bug 或有改进建议？请通过以下方式报告：
-
-- [GitHub Issues](https://github.com/fromsko/siyuan-mcp-server/issues)
-- 详细描述问题的复现步骤
-- 提供相关的错误日志和环境信息
-
-## 📜 开源协议
-
-本项目采用 ISC 协议开源，详情请查看 [LICENSE](LICENSE) 文件。
-
-## 🔗 相关资源
-
-### 官方链接
-
-- 📚 [思源笔记官网](https://b3log.org/siyuan/)
-- 🔗 [Model Context Protocol](https://modelcontextprotocol.io/)
-- 🤖 [Claude Desktop](https://claude.ai/download)
-- 📦 [npm 包页面](https://www.npmjs.com/package/@fromsko/siyuan-mcp-server)
-
-### 社区与支持
-
-- 💬 [思源笔记社区](https://ld246.com/domain/siyuan)
-- 🐙 [项目 GitHub](https://github.com/fromsko/siyuan-mcp-server)
-- 📧 [问题反馈](mailto:hnkong666@gmail.com)
-
-## ❤️ 特别感谢
-
-- 🌟 **原始项目作者** [onigeya](https://github.com/onigeya/siyuan-mcp-server) - 本项目基于其优秀的开源工作进行改进和扩展
-- 🙏 [思源笔记](https://github.com/siyuan-note/siyuan) 团队 - 提供优秀的笔记软件
-- 🤖 [Anthropic](https://www.anthropic.com/) - 推动 MCP 协议发展
-- 👥 所有贡献者和用户 - 让项目变得更好
-
----
-
-<div align="center">
-  
-  **🌟 如果这个项目对您有帮助，请给我们一个 Star！**
-  
-  <strong>💻 用 TypeScript 和 ❤️ 精心构建</strong>
-  
-</div>
+- 🌟 [onigeya](https://github.com/onigeya/siyuan-mcp-server) — 原始项目
+- 🙏 [思源笔记](https://github.com/siyuan-note/siyuan) 团队
+- 🤖 [Anthropic](https://www.anthropic.com/) — MCP 协议

@@ -39,7 +39,7 @@ const exportNotebookHandler: CommandHandler = {
             params: { paths: ["/20210817205410-2kvfpfn"], name: "my-notebook" },
             response: { path: "temp/export/my-notebook.zip" }
         }],
-        apiLink: 'https://github.com/siyuan-note/siyuan/blob/master/API_zh_CN.md#导出文件与目录'
+        apiLink: 'https://github.com/siyuan-note/siyuan/blob/master/docs/API.md#export-files-and-folders'
     }
 };
 
@@ -67,7 +67,7 @@ const exportDocHandler: CommandHandler = {
             params: { id: "20210817205410-2kvfpfn" },
             response: { hPath: "/foo/bar", content: "# Title\n\nContent..." }
         }],
-        apiLink: 'https://github.com/siyuan-note/siyuan/blob/master/API_zh_CN.md#导出-markdown-文本'
+        apiLink: 'https://github.com/siyuan-note/siyuan/blob/master/docs/API.md#export-markdown'
     }
 };
 
