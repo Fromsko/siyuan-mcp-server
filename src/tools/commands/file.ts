@@ -181,10 +181,40 @@ const readDirHandler: CommandHandler = {
     }
 };
 
+// Rename file
+const renameFileHandler: CommandHandler = {
+    namespace,
+    name: 'renameFile',
+    description: 'Rename a file or directory',
+    params: z.object({
+        path: z.string().describe('Current file path (relative to workspace)'),
+        newPath: z.string().describe('New file path (relative to workspace)')
+    }),
+    handler: createHandler('/api/file/renameFile'),
+    documentation: {
+        description: 'Rename a file or directory within the workspace',
+        params: {
+            path: { type: 'string', description: 'Current file path', required: true },
+            newPath: { type: 'string', description: 'New file path', required: true }
+        },
+        returns: { type: 'object', description: 'Operation result', properties: {} },
+        examples: [{
+            description: 'Rename an asset file',
+            params: {
+                path: '/data/assets/image-20230523085812-k3o9t32.png',
+                newPath: '/data/assets/test-20230523085812-k3o9t32.png'
+            },
+            response: {}
+        }],
+        apiLink: 'https://github.com/siyuan-note/siyuan/blob/master/API.md#rename-file'
+    }
+};
+
 // Register all file related commands
 export function registerFileHandlers() {
     registry.registerCommand(getFileHandler);
     registry.registerCommand(putFileHandler);
     registry.registerCommand(removeFileHandler);
     registry.registerCommand(readDirHandler);
-} 
+    registry.registerCommand(renameFileHandler);
+}
